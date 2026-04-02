@@ -53,6 +53,8 @@ export function EditRecipeClient({ recipe, categories }: EditRecipeClientProps) 
         photoUrl = await uploadRecipePhoto(formData);
       }
 
+      toast.success("Recipe updated!");
+
       await updateRecipeAction({
         recipeId: recipe.id,
         title: data.title,
@@ -67,9 +69,11 @@ export function EditRecipeClient({ recipe, categories }: EditRecipeClientProps) 
         instructions: data.instructions,
         categoryIds: data.categoryIds,
       });
-
-      toast.success("Recipe updated!");
     } catch (error) {
+      // redirect() throws a NEXT_REDIRECT error — let it propagate
+      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
+        throw error;
+      }
       toast.error(error instanceof Error ? error.message : "Failed to update recipe");
     }
   }

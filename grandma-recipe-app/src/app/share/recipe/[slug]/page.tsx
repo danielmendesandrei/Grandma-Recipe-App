@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Clock, Users } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
+import { ImportRecipeButton } from "./ImportRecipeButton";
 import type { RecipeWithDetails } from "@/src/lib/types/database";
 
 export default async function PublicRecipePage({
@@ -35,6 +36,13 @@ export default async function PublicRecipePage({
   if (error || !recipe) notFound();
 
   const r = recipe as any;
+
+  // Check if the current user is logged in (and if they own this recipe)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isLoggedIn = !!user;
+  const isOwner = isLoggedIn && user.id === r.user_id;
 
   // Fetch categories
   const { data: recipeCats } = await supabase
@@ -75,6 +83,13 @@ export default async function PublicRecipePage({
             <p className="text-muted-foreground mt-2">{r.description}</p>
           )}
         </div>
+
+        {/* Import button */}
+        <ImportRecipeButton
+          recipeId={r.id}
+          isLoggedIn={isLoggedIn}
+          isOwner={isOwner}
+        />
 
         {/* Metadata */}
         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">

@@ -61,3 +61,46 @@ export async function deleteCategoryAction(categoryId: string) {
   if (error) throw new Error(error.message);
   revalidatePath("/categories");
 }
+
+export async function addRecipesToCategoryAction(
+  categoryId: string,
+  recipeIds: string[],
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  if (recipeIds.length === 0) return;
+
+  const rows = recipeIds.map((rid) => ({
+    recipe_id: rid,
+    category_id: categoryId,
+  }));
+
+  const { error } = await supabase
+    .from("recipe_categories")
+    .upsert(rows, { onConflict: "recipe_id,category_id" });
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/categories/${categoryId}`);
+  revalidatePath("/categories");
+}
+
+export async function removeRecipeFromCategoryAction(
+  categoryId: string,
+  recipeId: string,
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { error } = await supabase
+    .from("recipe_categories")
+    .delete()
+    .eq("recipe_id", recipeId)
+    .eq("category_id", categoryId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/categories/${categoryId}`);
+  revalidatePath("/categories");
+}

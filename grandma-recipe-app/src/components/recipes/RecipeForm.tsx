@@ -11,6 +11,7 @@ import { Separator } from "@/src/components/ui/separator";
 import {
   Plus, Trash2, GripVertical, Upload, Clock, Users, Link as LinkIcon, X,
 } from "lucide-react";
+import { UnitSelect } from "@/src/components/ui/unit-select";
 import type { Category } from "@/src/lib/types/database";
 
 // ---- Types ----
@@ -423,11 +424,10 @@ export function RecipeForm({ initialData, categories, onSubmit, submitLabel }: R
                 value={ing.quantity}
                 onChange={(e) => updateIngredient(ing.tempId, "quantity", e.target.value)}
               />
-              <Input
-                className="w-20"
-                placeholder="Unit"
+              <UnitSelect
+                className="w-24"
                 value={ing.unit}
-                onChange={(e) => updateIngredient(ing.tempId, "unit", e.target.value)}
+                onChange={(val) => updateIngredient(ing.tempId, "unit", val)}
               />
               <Input
                 className="flex-1"
@@ -540,12 +540,12 @@ export function RecipeForm({ initialData, categories, onSubmit, submitLabel }: R
                                 updateStepIngredientPortion(inst.tempId, li.ingredientTempId, "quantity", e.target.value)
                               }
                             />
-                            <Input
-                              className="h-7 w-16 text-xs"
-                              placeholder="Unit"
+                            <UnitSelect
+                              className="w-20"
+                              compact
                               value={li.unit}
-                              onChange={(e) =>
-                                updateStepIngredientPortion(inst.tempId, li.ingredientTempId, "unit", e.target.value)
+                              onChange={(val) =>
+                                updateStepIngredientPortion(inst.tempId, li.ingredientTempId, "unit", val)
                               }
                             />
                             <span className="text-muted-foreground text-[10px]">(blank = all)</span>

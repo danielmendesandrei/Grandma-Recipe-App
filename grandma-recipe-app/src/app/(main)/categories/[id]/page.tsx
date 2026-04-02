@@ -1,10 +1,7 @@
 import { createClient } from "@/src/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/src/components/ui/button";
-import { RecipeCard } from "@/src/components/recipes/RecipeCard";
 import type { Category } from "@/src/lib/types/database";
+import { CategoryDetailClient } from "./CategoryDetailClient";
 
 export default async function CategoryDetailPage({
   params,
@@ -49,43 +46,24 @@ export default async function CategoryDetailPage({
     recipes = (data ?? []).map((r: any) => ({ ...r, categories: [category] }));
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href="/categories">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div className="flex items-center gap-2">
-          <div
-            className="h-4 w-4 rounded-full"
-            style={{
-              backgroundColor: category.color || "hsl(var(--primary))",
-            }}
-          />
-          <h1 className="text-2xl font-bold text-foreground">
-            {category.name}
-          </h1>
-        </div>
-      </div>
+  // Fetch all user recipes (for the add dialog)
+  const { data: allRecipesRaw } = await supabase
+    .from("recipes")
+    .select("id, title, photo_url")
+    .eq("user_id", user.id)
+    .order("title");
 
-      {recipes.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-lg text-muted-foreground">
-            No recipes in this category yet.
-          </p>
-          <Link href="/recipes/new" className="mt-4">
-            <Button variant="outline">Create a Recipe</Button>
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {recipes.map((recipe: any) => (
-            <RecipeCard key={recipe.id} recipe={recipe} />
-          ))}
-        </div>
-      )}
-    </div>
+  const allRecipes = (allRecipesRaw ?? []) as {
+    id: string;
+    title: string;
+    photo_url: string | null;
+  }[];
+
+  return (
+    <CategoryDetailClient
+      category={category}
+      recipes={recipes}
+      allRecipes={allRecipes}
+    />
   );
 }

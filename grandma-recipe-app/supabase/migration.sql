@@ -216,7 +216,20 @@ CREATE TRIGGER on_auth_user_created
   EXECUTE FUNCTION handle_new_user();
 
 -- ========================
--- 6. Row Level Security
+-- 6. Security-definer helper (avoids infinite RLS recursion)
+-- ========================
+CREATE OR REPLACE FUNCTION public.get_my_group_ids()
+RETURNS SETOF UUID
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT group_id FROM group_members WHERE user_id = auth.uid();
+$$;
+
+-- ========================
+-- 7. Row Level Security
 -- ========================
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE groups ENABLE ROW LEVEL SECURITY;
@@ -250,7 +263,7 @@ CREATE POLICY "Group members can view their groups"
   ON groups FOR SELECT
   TO authenticated
   USING (
-    id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+    id IN (SELECT public.get_my_group_ids())
   );
 
 CREATE POLICY "Authenticated users can create groups"
@@ -277,7 +290,7 @@ CREATE POLICY "Group members can view members of their groups"
   ON group_members FOR SELECT
   TO authenticated
   USING (
-    group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+    group_id IN (SELECT public.get_my_group_ids())
   );
 
 CREATE POLICY "Users can join groups (insert themselves)"
@@ -290,7 +303,7 @@ CREATE POLICY "Users can leave groups (delete themselves) or admins can remove"
   TO authenticated
   USING (
     auth.uid() = user_id
-    OR group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid() AND role = 'admin')
+    OR group_id IN (SELECT public.get_my_group_ids())
   );
 
 -- ---- CATEGORIES ----
@@ -299,7 +312,7 @@ CREATE POLICY "Users can view own categories and group categories"
   TO authenticated
   USING (
     user_id = auth.uid()
-    OR group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+    OR group_id IN (SELECT public.get_my_group_ids())
   );
 
 CREATE POLICY "Users can create categories"
@@ -324,7 +337,7 @@ CREATE POLICY "Users can view own recipes, group recipes, and public recipes"
   USING (
     user_id = auth.uid()
     OR is_public = true
-    OR group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+    OR group_id IN (SELECT public.get_my_group_ids())
   );
 
 CREATE POLICY "Users can create recipes"
@@ -350,7 +363,7 @@ CREATE POLICY "Users can view recipe_categories for visible recipes"
     recipe_id IN (
       SELECT id FROM recipes WHERE user_id = auth.uid()
         OR is_public = true
-        OR group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+        OR group_id IN (SELECT public.get_my_group_ids())
     )
   );
 
@@ -375,7 +388,7 @@ CREATE POLICY "Users can view ingredients for visible recipes"
     recipe_id IN (
       SELECT id FROM recipes WHERE user_id = auth.uid()
         OR is_public = true
-        OR group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+        OR group_id IN (SELECT public.get_my_group_ids())
     )
   );
 
@@ -403,7 +416,7 @@ CREATE POLICY "Users can view instructions for visible recipes"
     recipe_id IN (
       SELECT id FROM recipes WHERE user_id = auth.uid()
         OR is_public = true
-        OR group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+        OR group_id IN (SELECT public.get_my_group_ids())
     )
   );
 
@@ -433,7 +446,7 @@ CREATE POLICY "Users can view instruction_ingredients for visible recipes"
       JOIN recipes r ON r.id = i.recipe_id
       WHERE r.user_id = auth.uid()
         OR r.is_public = true
-        OR r.group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+        OR r.group_id IN (SELECT public.get_my_group_ids())
     )
   );
 
@@ -476,7 +489,7 @@ CREATE POLICY "Users can view own and group meal plans"
   TO authenticated
   USING (
     user_id = auth.uid()
-    OR group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+    OR group_id IN (SELECT public.get_my_group_ids())
   );
 
 CREATE POLICY "Users can create meal plans"
@@ -501,7 +514,7 @@ CREATE POLICY "Users can view entries for their meal plans"
   USING (
     meal_plan_id IN (
       SELECT id FROM meal_plans WHERE user_id = auth.uid()
-        OR group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+        OR group_id IN (SELECT public.get_my_group_ids())
     )
   );
 
@@ -527,7 +540,7 @@ CREATE POLICY "Users can view own grocery lists, group lists, and shared lists"
   ON grocery_lists FOR SELECT
   USING (
     user_id = auth.uid()
-    OR group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+    OR group_id IN (SELECT public.get_my_group_ids())
     OR (is_shared = true AND share_code IS NOT NULL)
   );
 
@@ -552,7 +565,7 @@ CREATE POLICY "Users can view merchants for their grocery lists"
   USING (
     grocery_list_id IN (
       SELECT id FROM grocery_lists WHERE user_id = auth.uid()
-        OR group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+        OR group_id IN (SELECT public.get_my_group_ids())
         OR (is_shared = true AND share_code IS NOT NULL)
     )
   );
@@ -580,7 +593,7 @@ CREATE POLICY "Users can view items for their grocery lists"
   USING (
     grocery_list_id IN (
       SELECT id FROM grocery_lists WHERE user_id = auth.uid()
-        OR group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+        OR group_id IN (SELECT public.get_my_group_ids())
         OR (is_shared = true AND share_code IS NOT NULL)
     )
   );
@@ -597,7 +610,7 @@ CREATE POLICY "Users can update items for accessible grocery lists"
   USING (
     grocery_list_id IN (
       SELECT id FROM grocery_lists WHERE user_id = auth.uid()
-        OR group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid())
+        OR group_id IN (SELECT public.get_my_group_ids())
         OR (is_shared = true AND share_code IS NOT NULL)
     )
   );

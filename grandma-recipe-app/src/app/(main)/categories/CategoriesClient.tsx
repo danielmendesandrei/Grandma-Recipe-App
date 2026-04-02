@@ -25,9 +25,18 @@ import type { Category } from "@/src/lib/types/database";
 import Link from "next/link";
 
 const PRESET_COLORS = [
-  "#c0392b", "#e67e22", "#f1c40f", "#27ae60",
-  "#2980b9", "#8e44ad", "#1abc9c", "#e74c3c",
-  "#d35400", "#2ecc71", "#3498db", "#9b59b6",
+  "#e74c3c", // Red
+  "#e67e22", // Orange
+  "#f1c40f", // Yellow
+  "#2ecc71", // Green
+  "#1abc9c", // Teal
+  "#3498db", // Blue
+  "#9b59b6", // Purple
+  "#e84393", // Pink
+  "#6c5ce7", // Indigo
+  "#a0522d", // Brown
+  "#fdcb6e", // Gold
+  "#636e72", // Grey
 ];
 
 interface CategoriesClientProps {

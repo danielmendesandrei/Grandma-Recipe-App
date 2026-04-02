@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import {
-  Clock, Users, Edit, Trash2, Share2, ExternalLink, ArrowLeft, FileDown, ImageDown,
+  Clock, Users, Edit, Trash2, Share2, ExternalLink, ArrowLeft, FileDown,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -15,6 +15,7 @@ import {
 import { IngredientList } from "@/src/components/recipes/IngredientList";
 import { InstructionSteps } from "@/src/components/recipes/InstructionSteps";
 import { ServingScaler } from "@/src/components/recipes/ServingScaler";
+import { SystemToggle } from "@/src/components/recipes/UnitConverter";
 import { deleteRecipeAction, togglePublicAction } from "./actions";
 import type { RecipeWithDetails, Category } from "@/src/lib/types/database";
 import Link from "next/link";
@@ -30,7 +31,7 @@ export function RecipeDetailClient({ recipe, isOwner }: RecipeDetailClientProps)
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set());
-  const recipeRef = useRef<HTMLDivElement>(null);
+  const [targetSystem, setTargetSystem] = useState<"metric" | "imperial" | null>(null);
 
   const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
 
@@ -122,26 +123,8 @@ export function RecipeDetailClient({ recipe, isOwner }: RecipeDetailClientProps)
     }
   }
 
-  async function exportAsImage() {
-    if (!recipeRef.current) return;
-    try {
-      const { default: html2canvas } = await import("html2canvas");
-      const canvas = await html2canvas(recipeRef.current, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-      });
-      const link = document.createElement("a");
-      link.download = `${recipe.title.replace(/[^a-zA-Z0-9]/g, "_")}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-      toast.success("Image downloaded!");
-    } catch {
-      toast.error("Failed to export image");
-    }
-  }
-
   return (
-    <div className="max-w-3xl mx-auto space-y-6" ref={recipeRef}>
+    <div className="max-w-3xl mx-auto space-y-6">
       {/* Back button */}
       <Link href="/recipes" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> Back to recipes
@@ -181,9 +164,6 @@ export function RecipeDetailClient({ recipe, isOwner }: RecipeDetailClientProps)
             </Button>
             <Button variant="outline" size="icon" onClick={exportAsPdf} title="Export as PDF">
               <FileDown className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={exportAsImage} title="Export as Image">
-              <ImageDown className="h-4 w-4" />
             </Button>
           </div>
         )}
@@ -247,9 +227,12 @@ export function RecipeDetailClient({ recipe, isOwner }: RecipeDetailClientProps)
       <Separator />
 
       {/* Serving scaler */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-lg font-semibold">Ingredients</h2>
-        <ServingScaler baseServings={recipe.servings} onChange={setScaleFactor} />
+        <div className="flex items-center gap-3">
+          <SystemToggle targetSystem={targetSystem} onToggle={setTargetSystem} />
+          <ServingScaler baseServings={recipe.servings} onChange={setScaleFactor} />
+        </div>
       </div>
 
       {/* Ingredients */}
@@ -258,6 +241,7 @@ export function RecipeDetailClient({ recipe, isOwner }: RecipeDetailClientProps)
         scaleFactor={scaleFactor}
         checkedIds={checkedIngredients}
         onToggle={toggleIngredient}
+        targetSystem={targetSystem}
       />
 
       <Separator />

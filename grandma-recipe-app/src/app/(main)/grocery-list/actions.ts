@@ -17,20 +17,30 @@ export async function generateFromMealPlan(mealPlanId: string) {
 
   if (!entries || entries.length === 0) throw new Error("No recipes in meal plan");
 
-  const recipeIds = [...new Set(entries.map((e) => e.recipe_id))];
+  // Count how many times each recipe appears in the meal plan
+  const recipeCounts = new Map<string, number>();
+  for (const entry of entries) {
+    recipeCounts.set(entry.recipe_id, (recipeCounts.get(entry.recipe_id) ?? 0) + 1);
+  }
 
-  // Fetch ingredients for all recipes
+  const recipeIds = [...recipeCounts.keys()];
+
+  // Fetch ingredients for all unique recipes
   const { data: ingredients } = await supabase
     .from("ingredients")
     .select("name, quantity, unit, recipe_id")
     .in("recipe_id", recipeIds);
 
-  const rawItems = (ingredients ?? []).map((ing) => ({
-    name: ing.name,
-    quantity: ing.quantity,
-    unit: ing.unit,
-    source_recipe_id: ing.recipe_id,
-  }));
+  // Multiply ingredient quantities by how many times the recipe appears
+  const rawItems = (ingredients ?? []).map((ing) => {
+    const count = recipeCounts.get(ing.recipe_id) ?? 1;
+    return {
+      name: ing.name,
+      quantity: ing.quantity != null ? ing.quantity * count : null,
+      unit: ing.unit,
+      source_recipe_id: ing.recipe_id,
+    };
+  });
 
   const consolidated = consolidateIngredients(rawItems);
 

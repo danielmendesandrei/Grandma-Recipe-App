@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/src/components/ui/button";
-import { Minus, Plus } from "lucide-react";
+import { Input } from "@/src/components/ui/input";
 
 interface ServingScalerProps {
   baseServings: number;
@@ -10,36 +9,36 @@ interface ServingScalerProps {
 }
 
 export function ServingScaler({ baseServings, onChange }: ServingScalerProps) {
-  const [servings, setServings] = useState(baseServings);
+  const [servings, setServings] = useState(baseServings.toString());
 
-  function update(newServings: number) {
-    if (newServings < 1) return;
-    setServings(newServings);
-    onChange(newServings / baseServings);
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value;
+    setServings(raw);
+    const num = parseInt(raw, 10);
+    if (!isNaN(num) && num >= 1) {
+      onChange(num / baseServings);
+    }
+  }
+
+  function handleBlur() {
+    const num = parseInt(servings, 10);
+    if (isNaN(num) || num < 1) {
+      setServings(baseServings.toString());
+      onChange(1);
+    }
   }
 
   return (
     <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size="icon"
-        className="h-8 w-8"
-        onClick={() => update(servings - 1)}
-        disabled={servings <= 1}
-      >
-        <Minus className="h-3 w-3" />
-      </Button>
-      <span className="text-sm font-medium w-20 text-center">
-        {servings} serving{servings !== 1 ? "s" : ""}
-      </span>
-      <Button
-        variant="outline"
-        size="icon"
-        className="h-8 w-8"
-        onClick={() => update(servings + 1)}
-      >
-        <Plus className="h-3 w-3" />
-      </Button>
+      <Input
+        type="number"
+        min={1}
+        value={servings}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        className="h-8 w-16 text-center text-sm"
+      />
+      <span className="text-sm text-muted-foreground">servings</span>
     </div>
   );
 }

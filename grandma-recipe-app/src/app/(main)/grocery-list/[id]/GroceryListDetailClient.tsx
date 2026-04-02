@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import {
@@ -15,6 +15,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
+import { UnitSelect } from "@/src/components/ui/unit-select";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +59,10 @@ export function GroceryListDetailClient({
   const [merchantDialogOpen, setMerchantDialogOpen] = useState(false);
   const [newMerchantName, setNewMerchantName] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // Sync local state when server props change (after router.refresh())
+  useEffect(() => { setItems(initialItems); }, [initialItems]);
+  useEffect(() => { setMerchants(initialMerchants); }, [initialMerchants]);
 
   async function handleAddItem(e: React.FormEvent) {
     e.preventDefault();
@@ -199,11 +204,10 @@ export function GroceryListDetailClient({
           onChange={(e) => setNewItemQty(e.target.value)}
           className="w-16"
         />
-        <Input
-          placeholder="Unit"
+        <UnitSelect
+          className="w-24"
           value={newItemUnit}
-          onChange={(e) => setNewItemUnit(e.target.value)}
-          className="w-20"
+          onChange={setNewItemUnit}
         />
         <Button type="submit" size="icon">
           <Plus className="h-4 w-4" />

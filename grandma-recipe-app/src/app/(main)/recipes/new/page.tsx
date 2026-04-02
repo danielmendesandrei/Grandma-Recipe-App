@@ -1,7 +1,12 @@
 import { createClient } from "@/src/lib/supabase/server";
 import { CreateRecipeClient } from "./CreateRecipeClient";
 
-export default async function NewRecipePage() {
+export default async function NewRecipePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string }>;
+}) {
+  const { category: categoryId } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -15,7 +20,10 @@ export default async function NewRecipePage() {
   return (
     <div className="max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">New Recipe</h1>
-      <CreateRecipeClient categories={(categories ?? []) as any[]} />
+      <CreateRecipeClient
+        categories={(categories ?? []) as any[]}
+        defaultCategoryId={categoryId}
+      />
     </div>
   );
 }

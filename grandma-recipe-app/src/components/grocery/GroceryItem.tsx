@@ -40,7 +40,12 @@ export function GroceryItem({ item, merchants, onToggle }: GroceryItemProps) {
   }
 
   async function handleDelete() {
-    await deleteGroceryItem(item.id);
+    try {
+      await deleteGroceryItem(item.id);
+      onToggle?.();
+    } catch {
+      // silently fail
+    }
   }
 
   async function handleMerchantChange(val: string) {

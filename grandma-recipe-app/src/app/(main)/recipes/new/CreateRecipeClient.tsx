@@ -8,9 +8,10 @@ import type { Category } from "@/src/lib/types/database";
 
 interface CreateRecipeClientProps {
   categories: Category[];
+  defaultCategoryId?: string;
 }
 
-export function CreateRecipeClient({ categories }: CreateRecipeClientProps) {
+export function CreateRecipeClient({ categories, defaultCategoryId }: CreateRecipeClientProps) {
   const router = useRouter();
 
   async function handleSubmit(data: RecipeFormData) {
@@ -22,6 +23,8 @@ export function CreateRecipeClient({ categories }: CreateRecipeClientProps) {
         formData.append("photo", data.photo);
         photoUrl = await uploadRecipePhoto(formData);
       }
+
+      toast.success("Recipe created!");
 
       await createRecipeAction({
         title: data.title,
@@ -36,9 +39,11 @@ export function CreateRecipeClient({ categories }: CreateRecipeClientProps) {
         instructions: data.instructions,
         categoryIds: data.categoryIds,
       });
-
-      toast.success("Recipe created!");
     } catch (error) {
+      // redirect() throws a NEXT_REDIRECT error — let it propagate
+      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
+        throw error;
+      }
       toast.error(error instanceof Error ? error.message : "Failed to create recipe");
     }
   }
@@ -48,6 +53,7 @@ export function CreateRecipeClient({ categories }: CreateRecipeClientProps) {
       categories={categories}
       onSubmit={handleSubmit}
       submitLabel="Create Recipe"
+      initialData={defaultCategoryId ? { categoryIds: [defaultCategoryId] } : undefined}
     />
   );
 }
